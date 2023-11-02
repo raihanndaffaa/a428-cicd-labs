@@ -1,25 +1,49 @@
 node {
-    def image = 'node:16-buster-slim'
-    def container
 
-    try {
-        container = docker.image(image).withRun('-p 3000:3000') { c ->
-            stage('Build') {
-                sh '''
-                    apt-get update &&
-                    apt-get install -y nodejs npm &&
-                    npm install
-                '''
+    def dockerImage = 'node:16-buster-slim'
+
+    stage('Build') {
+
+        echo 'Building the project...'
+
+        try {
+
+            docker.image(dockerImage).inside("-p 3000:3000") {
+
+                sh 'npm install'
+
             }
 
-            stage('Test') {
-                sh './jenkins/scripts/test.sh'
-            }
+        } catch (Exception e) {
+
+            currentBuild.result = 'FAILURE'
+
+            error "Build failed: ${e.message}"
+
         }
-    } finally {
-        if (container != null) {
-            container.stop()
-            container.remove()
-        }
+
     }
+
+    stage('Test') {
+
+        echo 'Running tests...'
+
+        try {
+
+            docker.image(dockerImage).inside("-p 3000:3000") {
+
+                sh './jenkins/scripts/test.sh'
+
+            }
+
+        } catch (Exception e) {
+
+            currentBuild.result = 'FAILURE'
+
+            error "Tests failed: ${e.message}"
+
+        }
+
+    }
+
 }
