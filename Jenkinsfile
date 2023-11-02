@@ -4,6 +4,11 @@ node {
 
     try {
         container = docker.image(image).withRun('-p 3000:3000') { c ->
+            stage('Install Node.js and npm') {
+                sh 'apt-get update'
+                sh 'apt-get install -y nodejs npm'
+            }
+
             stage('Build') {
                 sh 'npm install'
             }
