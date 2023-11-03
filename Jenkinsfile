@@ -1,16 +1,16 @@
 node {
     def dockerImage = 'node:16-buster-slim'
-    
+
     try {
-        // Stage: Build
+        // Tahapan: Build
         stage('Build') {
             echo 'Building the project...'
             docker.image(dockerImage).inside("-p 3000:3000") {
                 sh 'npm install'
             }
         }
-        
-        // Stage: Test
+
+        // Tahapan: Test
         stage('Test') {
             echo 'Running tests...'
             docker.image(dockerImage).inside("-p 3000:3000") {
@@ -18,12 +18,12 @@ node {
             }
         }
 
-        // Stage: Manual Approval
+        // Tahapan: Manual Approval
         stage('Manual Approval') {
             input message: 'Lanjutkan ke tahap Deploy?', ok: 'Proceed', parameters: [choice(choices: ['Proceed', 'Abort'], description: 'Pilih tindakan', name: 'ACTION')]
         }
-        
-        // Stage: Deploy
+
+        // Tahapan: Deploy
         stage('Deploy') {
             steps {
                 sh './jenkins/scripts/deliver.sh'
