@@ -1,27 +1,51 @@
-pipeline {
-    agent {
-        docker {
-            image 'node:16-buster-slim'
-            args '-p 3000:3000'
-        }
-    }
-    stages {
+node {
+    def dockerImage = 'node:16-buster-slim'
+    
+    try {
+        // Stage: Build
         stage('Build') {
-            steps {
+            echo 'Building the project...'
+            docker.image(dockerImage).inside("-p 3000:3000") {
                 sh 'npm install'
             }
         }
+        
+        // Stage: Test
         stage('Test') {
-            steps {
+            echo 'Running tests...'
+            docker.image(dockerImage).inside("-p 3000:3000") {
                 sh './jenkins/scripts/test.sh'
             }
         }
-        stage('Deploy') { 
+
+        // Stage: Manual Approval
+        stage('Manual Approval') {
+            options {
+                timeout(time: 1, unit: 'MINUTES')
+            }
             steps {
-                sh './jenkins/scripts/deliver.sh' 
-                input message: 'Sudah selesai menggunakan React App? (Klik "Proceed" untuk mengakhiri)' 
-                sh './jenkins/scripts/kill.sh' 
+                script {
+                    def userInput = input message: 'Lanjutkan ke tahap Deploy?', parameters: [
+                        choice(name: 'ACTION', choices: 'Proceed\nAbort', description: 'Pilih tindakan')
+                    ]
+                    if (userInput == 'Proceed') {
+                        echo 'Proceed to Deploy...'
+                    } else {
+                        error 'Pipeline aborted by user.'
+                    }
+                }
             }
         }
+        
+        // Stage: Deploy
+        stage('Deploy') {
+            steps {
+                sh './jenkins/scripts/deliver.sh'
+                sleep 60 // Menjeda eksekusi selama 1 menit
+                sh './jenkins/scripts/kill.sh'
+            }
+        }
+    } catch (Exception e) {
+        currentBuild.result = 'FAILURE'
+        error "Build, test, or deploy failed: ${e.message}"
     }
-}
