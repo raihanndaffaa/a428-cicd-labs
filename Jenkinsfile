@@ -20,21 +20,7 @@ node {
 
         // Stage: Manual Approval
         stage('Manual Approval') {
-            options {
-                timeout(time: 1, unit: 'MINUTES')
-            }
-            steps {
-                script {
-                    def userInput = input message: 'Lanjutkan ke tahap Deploy?', parameters: [
-                        choice(name: 'ACTION', choices: 'Proceed\nAbort', description: 'Pilih tindakan')
-                    ]
-                    if (userInput == 'Proceed') {
-                        echo 'Proceed to Deploy...'
-                    } else {
-                        error 'Pipeline aborted by user.'
-                    }
-                }
-            }
+            input message: 'Lanjutkan ke tahap Deploy?', ok: 'Proceed', parameters: [choice(choices: ['Proceed', 'Abort'], description: 'Pilih tindakan', name: 'ACTION')]
         }
         
         // Stage: Deploy
