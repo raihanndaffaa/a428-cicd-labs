@@ -49,3 +49,4 @@ node {
         currentBuild.result = 'FAILURE'
         error "Build, test, or deploy failed: ${e.message}"
     }
+}
